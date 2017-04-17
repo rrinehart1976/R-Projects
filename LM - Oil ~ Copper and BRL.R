@@ -13,7 +13,7 @@ wtim$group = "wti"
 brlm = Quandl("CURRFX/BRLUSD", collapse = "week", start_date=startdate)
 brlm$diff = c(brlm$Rate[1:(nrow(brlm)-1)] - brlm$Rate[2:nrow(brlm)],0)
 brlm$group = "brlusd"
-brlm = brlm[2:nrow(brlm),]
+#brlm = brlm[2:nrow(brlm),]
 
 copm = Quandl("CHRIS/CME_HG1", collapse = "week", start_date=startdate)
 copm$diff = c(copm$Settle[1:(nrow(copm)-1)] - copm$Settle[2:nrow(copm)],0)
@@ -36,7 +36,8 @@ oilpred = predict(oilmod)
 gdata = melt(data.frame(data1$oil, wtim$Date, oilpred),id="wtim.Date")
 ggplot(data=gdata,
        aes(x=wtim.Date, y=value, colour=variable)) +
-  geom_line() 
+  geom_line() +
+  geom_point()
   # theme(panel.grid.minor = element_line(colour="blue", size=0.5)) + 
   # scale_x_continuous(minor_breaks = seq(1, 10, 0.5))
 # 
