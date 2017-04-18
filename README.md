@@ -1,4 +1,4 @@
 # R_models
-Predictions in R 
+Miscellaneous Machine Learning/Predictions in R 
 
-Just a place to store prediction models. 
+Just a place to store machine learning algorithms and prediction models. 
