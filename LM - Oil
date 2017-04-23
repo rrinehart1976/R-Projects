@@ -1,4 +1,5 @@
 library(Quandl)
+library(dplyr)
 library(reshape2)
 library(lubridate)
 library(tidyr)
@@ -7,22 +8,20 @@ library(ggplot2)
 #montly diff
 startdate = "2015-09-01"
 enddate = "2012-01-01"
-wtim = Quandl("CHRIS/CME_CL1", collapse = "week", start_date=startdate)
-wtim$diff = c(wtim$Settle[1:(nrow(wtim)-1)] - wtim$Settle[2:nrow(wtim)],0)
-wtim$group = "wti"
+wti = Quandl("CHRIS/CME_CL1", collapse = "week", start_date=startdate)
+wti$diff = c(wti$Settle[1:(nrow(wti)-1)] - wti$Settle[2:nrow(wti)],0)
+wti$group = "wti"
 #wtim = wtim[2:nrow(wtim),]
 
-brlm = Quandl("CURRFX/BRLUSD", collapse = "week", start_date=startdate)
-brlm$diff = c(brlm$Rate[1:(nrow(brlm)-1)] - brlm$Rate[2:nrow(brlm)],0)
-brlm$group = "brlusd"
+bdi = Quandl("LLOYDS/BDI", collapse = "week", start_date=startdate)
+bdi$diff = c(bdi$Index[1:(nrow(bdi)-1)] - bdi$Index[2:nrow(bdi)],0)
+bdi$group = "bdi"
 #brlm = brlm[2:nrow(brlm),]
 
-copm = Quandl("CHRIS/CME_HG1", collapse = "week", start_date=startdate)
-copm$diff = c(copm$Settle[1:(nrow(copm)-1)] - copm$Settle[2:nrow(copm)],0)
-copm$group = "copusd"
-#copm = copm[2:nrow(copm),]
+wti = filter(wti, wti$Date %in% bdi$Date) 
 
-data1 = data.frame(oil = wtim[,c("Settle")], brlusd = brlm[,c("Rate")], copper = copm[,c("Settle")] )
+#copm = copm[2:nrow(copm),]
+data1 = data.frame(oil = wti[,c("Settle")], bdi = bdi[,c("Index")] )
 #Plot the data to look for multivariate outliers, non-linear relationships etc
 plot(data1)
 cor(data1)
