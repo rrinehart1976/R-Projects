@@ -6,6 +6,8 @@ library(tidyr)
 library(ggplot2)
 ??Quandl
 #montly diff
+Quandl.api_key("nfJf-LHSL3gtCpXmyuX2")
+
 startdate = "2015-09-01"
 enddate = "2012-01-01"
 wti = Quandl("CHRIS/CME_CL1", collapse = "week", start_date=startdate)
@@ -13,15 +15,24 @@ wti$diff = c(wti$Settle[1:(nrow(wti)-1)] - wti$Settle[2:nrow(wti)],0)
 wti$group = "wti"
 #wtim = wtim[2:nrow(wtim),]
 
+brlusd = Quandl("CURRFX/BRLUSD", collapse = "week", start_date=startdate)
+brlusd$diff = c(brlusd$Rate[1:(nrow(brlusd)-1)] - brlusd$Rate[2:nrow(brlusd)],0)
+brlusd$group = "brlusd"
+
+copper = Quandl("CHRIS/CME_HG1", collapse = "week", start_date=startdate)
+copper$diff = c(copper$Settle[1:(nrow(copper)-1)] - copper$Settle[2:nrow(copper)],0)
+copper$group = "copusd"
+-#copm = copm[2:nrow(copm),]
+
 bdi = Quandl("LLOYDS/BDI", collapse = "week", start_date=startdate)
 bdi$diff = c(bdi$Index[1:(nrow(bdi)-1)] - bdi$Index[2:nrow(bdi)],0)
 bdi$group = "bdi"
 #brlm = brlm[2:nrow(brlm),]
 
-wti = filter(wti, wti$Date %in% bdi$Date) 
+# wti = filter(wti, wti$Date %in% bdi$Date) 
 
 #copm = copm[2:nrow(copm),]
-data1 = data.frame(oil = wti[,c("Settle")], bdi = bdi[,c("Index")] )
+data1 = data.frame(oil = wti[,c("Settle")], brlusd = brlusd[,c("Rate")], copper = copper[,c("Settle")])
 #Plot the data to look for multivariate outliers, non-linear relationships etc
 plot(data1)
 cor(data1)
@@ -38,16 +49,17 @@ summary(oilcop)
 # plot(oilmod)
 # par(mfrow=c(1,1))
 oilcop = predict(oilcop)
-gdata1 = melt(data.frame(data1$oil, wtim$Date, oilcop),id="wtim.Date")
+gdata1 = melt(data.frame(data1$oil, wti$Date, oilcop),id="wti.Date")
 
 oilbrl = predict(oilbrl)
-gdata2 = melt(data.frame(data1$oil, wtim$Date, oilbrl),id="wtim.Date")
+gdata2 = melt(data.frame(data1$oil, wti$Date, oilbrl),id="wti.Date")
 
 oilpred = predict(oilmod)
-gdata3 = melt(data.frame(data1$oil, wtim$Date, oilpred),id="wtim.Date")
+gdata3 = melt(data.frame(data1$oil, wti$Date, oilpred),id="wti.Date")
+
 gdata = rbind(gdata1,gdata2,gdata3) 
 ggplot(data=gdata,
-       aes(x=wtim.Date, y=value, colour=variable)) +
+       aes(x=wti.Date, y=value, colour=variable)) +
   geom_line(aes(linetype=variable)) +  
   geom_point()
 # theme(panel.grid.minor = element_line(colour="blue", size=0.5)) + 
