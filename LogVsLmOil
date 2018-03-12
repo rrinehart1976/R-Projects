@@ -1,0 +1,65 @@
+library(Quandl)
+library(dplyr)
+library(lubridate)
+library(reshape2)
+library(gmodels)
+library(ggplot2)
+
+startDate <- '2016-01-01'
+collapseInterval <- 'daily'
+
+wti = Quandl("CHRIS/CME_CL1", collapse = collapseInterval, start_date=startDate, order='asc')
+wti$lagd1 <- c(0,diff(wti$Settle))
+wti$lagd2 <- c(rep(0,2), diff(wti$Settle, lag=2))
+wti$lagd3 <- c(rep(0,3), diff(wti$Settle, lag=3))
+wti$lagd6 <- c(rep(0,6), diff(wti$Settle, lag=6))
+wti$lagd21 <- c(rep(0,21), diff(wti$Settle, lag=21))
+wti2 <- select(wti, Date, Settle, Volume, lagd1, lagd2, lagd3, lagd6, lagd21)
+
+copper = Quandl("CHRIS/CME_HG1", collapse = collapseInterval, start_date=startDate)
+copper <- arrange(copper, Date)
+copper$lagd1 <- c(0,diff(copper$Settle))
+copper$lagd2 <- c(rep(0,2), diff(copper$Settle, lag=2))
+copper$lagd3 <- c(rep(0,3), diff(copper$Settle, lag=3))
+copper$lagd6 <- c(rep(0,6), diff(copper$Settle, lag=6))
+copper$lagd21 <- c(rep(0,21), diff(copper$Settle, lag=21))
+cop2 <-  select(copper, Date, Settle, Volume, lagd1, lagd2, lagd3, lagd6, lagd21)
+
+cw <- inner_join(wti2,cop2,by="Date")
+cw$f1 <- c(cw[2:nrow(cw),"lagd1.x"], 0)
+cw$f6 <- c(cw[7:nrow(cw),"lagd6.x"], rep(0,6))
+View(cw)
+filter(cw, lagd1 > 1.25 & (lagd2 + lagd3) > -1.25)
+
+
+
+t1 <- filter(cw, year(Date) == 2018 | (year(Date) == 2017 & month(Date) %in% c(3)) | 
+                  (year(Date) == 2016 & month(Date) %in% c(3)) | (year(Date) == 2015 & month(Date) %in% c(3)) |
+                  (year(Date) == 2014 & month(Date) %in% c(3)))
+t2 <- t1[1:(nrow(t1)-16),]
+test1 <- t1[(nrow(t1)-15):nrow(t1),]
+train <- filter(t2, !(lagd21.y == 0 | f6 == 0))  %>%
+    mutate(pred6 = as.numeric((f6  < -1.5))) %>% #future day 6 value 
+    select(pred6, 8, 15) 
+trainlm <- filter(t2, !(lagd21.y == 0 | f6 == 0))  %>%
+  select(Date, f6, 8, 15) 
+
+model <- glm(pred6 ~.,family=binomial(link='logit'),data=train)
+
+fitted.results <- predict(model,newdata=subset(test1,select=c(8, 15)),type='response')
+#View(train)
+
+oilmod = lm(f6 ~ lagd21.x + lagd21.y, data = trainlm)
+#summary(oilmod)
+#oilpredpast <- predict(oilmod)
+predict(oilmod,newdata=subset(test1,select=c(8, 15)))
+fitted.results #<- ifelse(fitted.results > ,0.51,0)
+
+
+# oilpred <- c(oilpredpast, oilf6)
+# gdata1 = melt(data.frame(trainview$f6, trainview$Date, oilpred),id="trainview.Date")
+# gdata1$rownum <- row.names(gdata1) 
+# ggplot(data=gdata1,
+#        aes(x=as.character(trainview.Date), y=value, colour=variable)) +
+#   geom_line(aes(linetype=variable)) +  
+#   geom_point()
