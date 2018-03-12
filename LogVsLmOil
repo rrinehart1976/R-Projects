@@ -16,6 +16,9 @@ wti$lagd6 <- c(rep(0,6), diff(wti$Settle, lag=6))
 wti$lagd21 <- c(rep(0,21), diff(wti$Settle, lag=21))
 wti2 <- select(wti, Date, Settle, Volume, lagd1, lagd2, lagd3, lagd6, lagd21)
 
+wti4 = Quandl("CHRIS/CME_CL4", collapse = "weekly", start_date=startDate, order='asc')
+wti4$lagd1 <- c(0,diff(wti$Settle))
+
 copper = Quandl("CHRIS/CME_HG1", collapse = collapseInterval, start_date=startDate)
 copper <- arrange(copper, Date)
 copper$lagd1 <- c(0,diff(copper$Settle))
@@ -25,8 +28,16 @@ copper$lagd6 <- c(rep(0,6), diff(copper$Settle, lag=6))
 copper$lagd21 <- c(rep(0,21), diff(copper$Settle, lag=21))
 cop2 <-  select(copper, Date, Settle, Volume, lagd1, lagd2, lagd3, lagd6, lagd21)
 
+copper4 = Quandl("CHRIS/CME_HG4", collapse = collapseInterval, start_date=startDate)
+copper4 <- arrange(copper4, Date)
+copper4$lagd1 <- c(0,diff(copper4$Settle))
+
+wti2$curve <-  wti4$Settle - wti$Settle
+cop2$curve <- cop2$Settle - copper4$Settle
+
 cw <- inner_join(wti2,cop2,by="Date")
 cw$f1 <- c(cw[2:nrow(cw),"lagd1.x"], 0)
+cw$f3 <- c(cw[3:nrow(cw),"lagd3.x"], rep(0,2))
 cw$f6 <- c(cw[7:nrow(cw),"lagd6.x"], rep(0,6))
 View(cw)
 filter(cw, lagd1 > 1.25 & (lagd2 + lagd3) > -1.25)
