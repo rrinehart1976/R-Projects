@@ -1,63 +1,34 @@
-library(Quandl)
-library(dplyr)
-library(lubridate)
-library(reshape2)
-library(gmodels)
-library(ggplot2)
-
-startDate <- '2016-01-01'
-collapseInterval <- 'daily'
-
-wti = Quandl("CHRIS/CME_CL1", collapse = collapseInterval, start_date=startDate, order='asc')
-wti$lagd1 <- c(0,diff(wti$Settle))
-wti$lagd2 <- c(rep(0,2), diff(wti$Settle, lag=2))
-wti$lagd3 <- c(rep(0,3), diff(wti$Settle, lag=3))
-wti$lagd6 <- c(rep(0,6), diff(wti$Settle, lag=6))
-wti$lagd21 <- c(rep(0,21), diff(wti$Settle, lag=21))
-wti2 <- select(wti, Date, Settle, Volume, lagd1, lagd2, lagd3, lagd6, lagd21)
-
-wti4 = Quandl("CHRIS/CME_CL4", collapse = collapseInterval, start_date=startDate, order='asc')
-wti4$lagd1 <- c(0,diff(wti$Settle))
-
-copper = Quandl("CHRIS/CME_HG1", collapse = collapseInterval, start_date=startDate)
-copper <- arrange(copper, Date)
-copper$lagd1 <- c(0,diff(copper$Settle))
-copper$lagd2 <- c(rep(0,2), diff(copper$Settle, lag=2))
-copper$lagd3 <- c(rep(0,3), diff(copper$Settle, lag=3))
-copper$lagd6 <- c(rep(0,6), diff(copper$Settle, lag=6))
-copper$lagd21 <- c(rep(0,21), diff(copper$Settle, lag=21))
-cop2 <-  select(copper, Date, Settle, Volume, lagd1, lagd2, lagd3, lagd6, lagd21)
-
-copper4 = Quandl("CHRIS/CME_HG4", collapse = collapseInterval, start_date=startDate)
-copper4 <- arrange(copper4, Date)
-copper4$lagd1 <- c(0,diff(copper4$Settle))
-
-wti2$curve <-  wti4$Settle - wti$Settle
-cop2$curve <- cop2$Settle - copper4$Settle
-
-cw <- inner_join(wti2,cop2,by="Date")
-cw$f1 <- c(cw[2:nrow(cw),"lagd1.x"], 0)
-cw$f3 <- c(cw[3:nrow(cw),"lagd3.x"], rep(0,2))
-cw$f6 <- c(cw[7:nrow(cw),"lagd6.x"], rep(0,6))
-View(cw)
-filter(cw, lagd1 > 1.25 & (lagd2 + lagd3) > -1.25)
-
-
 t1 <- filter(cw, year(Date) == 2018 | (year(Date) == 2017 & month(Date) %in% c(3)) | 
-               (year(Date) == 2016 & month(Date) %in% c(3)) | (year(Date) == 2015 & month(Date) %in% c(3)) |
-               (year(Date) == 2014 & month(Date) %in% c(3)))
+                  (year(Date) == 2016 & month(Date) %in% c(3)) | (year(Date) == 2015 & month(Date) %in% c(3)) |
+                  (year(Date) == 2014 & month(Date) %in% c(3)))
 t2 <- t1[1:(nrow(t1)),]
 test1 <- t1[(nrow(t1)-15):nrow(t1),]
-train <- filter(t2, !(lagd21.y == 0 | f6 == 0))  %>%
+
+trainNeg <- filter(t2, !(lagd21.y == 0 | f6 == 0))  %>%
   mutate(pred6 = as.numeric((f6  < -1.5))) %>% #future day 6 value 
+  select(pred6, curve.x, lagd21.x, lagd21.y) 
+train <- filter(t2, !(lagd21.y == 0 | f6 == 0))  %>%
+  mutate(pred6 = as.numeric((f6  > 1.5))) %>% #future day 6 value 
   select(pred6, curve.x, lagd21.x, lagd21.y) 
 
 trainlm <- filter(t2, !(lagd21.y == 0 | f6 == 0))  %>%
   select(f6, curve.x, lagd21.x, lagd21.y) 
 
 model <- glm(pred6 ~.,family=binomial(link='logit'),data=train)
+modelneg <- glm(pred6 ~.,family=binomial(link='logit'),data=trainNeg)
 
 log.results <- predict(model, select(train, curve.x, lagd21.x, lagd21.y),type='response')
+logNeg.results <- predict(modelneg, select(trainNeg, curve.x, lagd21.x, lagd21.y),type='response')
+
 #View(train)
 
 oilmod = lm(f6 ~ curve.x + lagd21.x + lagd21.y, data = trainlm)
+#summary(oilmod)
+oilLm <- predict(oilmod)
+log.results # gt 1.5
+logNeg.results # lt -1.5
+oilLm
+
+predReal <- cbind(cw[(nrow(cw)-47):nrow(cw),], oilLm[(length(oilLm)-47):length(oilLm)])
+View(predReal)
+cor(predReal$f6, predReal$`oilLm[(length(oilLm) - 47):length(oilLm)]`)
