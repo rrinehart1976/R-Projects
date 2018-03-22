@@ -11,8 +11,7 @@ train <- filter(t2, !(lagd21.y == 0 | f6 == 0))  %>%
   mutate(pred6 = as.numeric((f6  > 1.5))) %>% #future day 6 value 
   select(pred6, curve.x, lagd21.x, lagd21.y) 
 
-trainlm <- filter(t2, !(lagd21.y == 0 | f6 == 0))  %>%
-  select(f6, curve.x, lagd21.x, lagd21.y) 
+predToYesterday <- select(t1, f6, curve.x, lagd21.x, lagd21.y) 
 
 model <- glm(pred6 ~.,family=binomial(link='logit'),data=train)
 modelneg <- glm(pred6 ~.,family=binomial(link='logit'),data=trainNeg)
@@ -24,7 +23,7 @@ logNeg.results <- predict(modelneg, select(trainNeg, curve.x, lagd21.x, lagd21.y
 
 oilmod = lm(f6 ~ curve.x + lagd21.x + lagd21.y, data = trainlm)
 #summary(oilmod)
-oilLm <- predict(oilmod)
+oilLm <- predict(oilmod, predToYesterday)
 log.results # gt 1.5
 logNeg.results # lt -1.5
 oilLm
