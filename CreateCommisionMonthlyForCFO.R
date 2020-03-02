@@ -11,30 +11,30 @@ View(filter(comm1, slsperid == "          "))
 
 # comm1s <- comm1 %>%
 #   mutate(slsperid = case_when
-#           (refnbr == "I0003200  " ~ "CRE",
+#           (refnbr == "I0003200  " ~ "Test Dealer",
 #             TRUE ~ slsperid)) %>%
 #   mutate(name = case_when
-#          (refnbr == "I0003200  " ~ "CRESCENT MARKETING GROUP, INC.",
+#          (refnbr == "I0003200  " ~ "Test Dealer 2",
 #            TRUE ~ name)) %>% 
 #   mutate(slsperid = case_when
 #        (custid == "53072" ~ "GTL",
 #          TRUE ~ slsperid)) %>%
 #   mutate(name = case_when
-#          (custid == "53072" ~ "GTL Associates",
+#          (custid == "53072" ~ "Test Dealer 3",
 #            TRUE ~ name)) %>% 
 #   mutate(slsperid = case_when
-#        (custid == "53052" ~ "SRP",
+#        (custid == "53052" ~ "Test Dealer 4",
 #          TRUE ~ slsperid)) %>%
 #   mutate(name = case_when
-#          (custid == "53052" ~ "Atlantic Sales and Marketing, Inc",
+#          (custid == "53052" ~ "Test Dealer 5",
 #            TRUE ~ name))
 
 # View(filter(comm1s, slsperid == "          "))
 # View(filter(comm1s, refnbr == "I0003200  "))
 # View(filter(comm1s, custid == "53072"))
 
-#             slsperid == "          " ~ "CRE",
-# a <- filter(c12, str_detect(name, 'Atlantic')) %>% 
+#             slsperid == "          " ~ "Test Dealer 1",
+# a <- filter(c12, str_detect(name, 'Dealer 5')) %>% 
 #   select(slsperid, trantype, refnbr, invtid, trandate, tranamt, drcr, acct, ordnbr)
 
 # filter(a, ordnbr == 'GA14432' & refnbr == 'I0000903') %>% group_by(drcr) %>% 
@@ -61,5 +61,3 @@ filter(c01s, str_detect(refnbr,'873070'))
 filter(c, slsperid == 'KRE')
 head(c)
 unique(c$ordnbr)
-SO1811240
-SO1811164
