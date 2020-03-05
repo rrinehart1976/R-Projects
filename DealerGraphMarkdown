@@ -1,0 +1,48 @@
+---
+title: "Siteline Dealers by Week"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+## R Markdown
+```{r cars, echo=FALSE}
+library(tidyverse)
+library(readr)
+library(lubridate)
+s <- read_csv("I:/Documents/Andrew/Reports/SitelineSubmittedWithDealer.csv")
+
+g1 <- s %>% 
+  mutate(time = floor_date(LastSubmittedDate, "month")) 
+
+gcomp <- g1 %>% complete(Name, time)
+
+gcomp$NetPrice[is.na(gcomp$NetPrice)] <- 0
+
+g2 <- gcomp %>%   group_by(time, Name) %>% 
+  summarise(sales=sum(NetPrice, na.rm = TRUE))
+
+dealers <- sort(unique(g1$Name))
+
+par(mrow=c(2,2))
+for(name in dealers)
+{
+  
+  plot <- 
+      g2 %>% filter(Name == name) %>% 
+    ggplot(aes(time, sales)) + 
+    geom_bar(stat="identity") + 
+    geom_point() + 
+    ggtitle(name) +
+    scale_y_continuous(labels = function(x) format(x, scientific = FALSE)) 
+    
+    print(plot)
+}
+    
+
+
+```
+
