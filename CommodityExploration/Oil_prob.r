@@ -1,12 +1,12 @@
+#Builds a matrix of lagged differences for oil copper corn brlusd and bdi
 library(Quandl)
 library(dplyr)
 library(reshape2)
 library(lubridate)
 library(tidyr)
 library(ggplot2)
-??Quandl
-#montly diff
-Quandl.api_key("nfJf-LHSL3gtCpXmyuX2")
+
+Quandl.api_key("")
 
 #pull weekly data for each of the past 13 years 
 startdate='2005-01-01'

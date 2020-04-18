@@ -1,3 +1,4 @@
+#Predicting oil with logistic and linear regression models, needs cross validation
 t1 <- filter(cw, year(Date) == 2018 | (year(Date) == 2017 & month(Date) %in% c(3)) | 
                   (year(Date) == 2016 & month(Date) %in% c(3)) | (year(Date) == 2015 & month(Date) %in% c(3)) |
                   (year(Date) == 2014 & month(Date) %in% c(3)))

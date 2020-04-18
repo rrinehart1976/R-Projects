@@ -16,8 +16,8 @@ con <- dbConnect(odbc(),
                  Driver = "SQL Server",
                  Server = "IN-SQL01",
                  Database = "COIN",
-                 UID = "userName",
-                 PWD = "password", #rstudioapi::askForPassword(),
+                 UID = "",
+                 PWD = "", #rstudioapi::askForPassword(),
                  Port = 1433)
 
 v <- dbGetQuery(con, "SELECT * FROM vwReportKeyData")
@@ -25,7 +25,7 @@ v <- dbGetQuery(con, "SELECT * FROM vwReportKeyData")
 v$SubmittedDate <- as.Date(v$SubmittedDate)
 
 caseorders <- v %>% 
-    select(SubmittedDate, OrderCaseTotal, AdjustPrice, OrderTotal, Brand, ProductLine, Overlay) %>% 
+    select(JobNumber, SubmittedDate, OrderCaseTotal, AdjustPrice, OrderTotal, Brand, ProductLine, Overlay) %>% 
     filter(OrderCaseTotal > 0) %>%
     filter(OrderCaseTotal != "NULL") %>%  
     filter(year(SubmittedDate) == 2020) %>% 
@@ -48,4 +48,5 @@ ggplot(weeklyBrand) +
   geom_bar(aes(weekNo, Cases, fill=Brand), stat="identity") +
   geom_line(aes(weekNo, CaseAverage, color=Brand)) +
   geom_line(data=weeklyBoth, aes(weekNo, CaseAverage))
+
 

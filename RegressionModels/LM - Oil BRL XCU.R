@@ -1,12 +1,12 @@
+#fit oil linear regression model with brlusd and copper as predictors 
 library(Quandl)
 library(dplyr)
 library(reshape2)
 library(lubridate)
 library(tidyr)
 library(ggplot2)
-??Quandl
 #montly diff
-Quandl.api_key("nfJf-LHSL3gtCpXmyuX2")
+Quandl.api_key("")
 
 startdate = "2015-09-01"
 enddate = "2012-01-01"

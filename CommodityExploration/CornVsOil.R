@@ -1,13 +1,12 @@
-#corn vs oil 
+#corn vs oil, correlation of price 
 library(Quandl)
 library(dplyr)
 library(reshape2)
 library(lubridate)
 library(tidyr)
 library(ggplot2)
-??case_when
-#montly diffv
-Quandl.api_key("nfJf-LHSL3gtCpXmyuX2")
+
+Quandl.api_key("")
 
 #pull weekly data for each of the past 13 years 
 startdate='2011-01-01'
