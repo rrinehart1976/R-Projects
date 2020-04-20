@@ -1,10 +1,45 @@
 # analyze ugaz 
-# 1. Does UGAZ lose more value during rollover period
+# 1. Does UGAZ lose more value during rollover period?
 library(tidyverse)
 library(lubridate)
 setwd("C:/Users/aborst/R-SCRIPTS/ugaz")
 
-a <- readr::read_csv('UGAZ.csv')
+period1 <- cbind(1,2,3,4,5,6,7,8,9,10)
+period2 <- cbind(11,12,13,14,15,16,17,18,19,20)
 
-a %>% select(Date, Close)
+#downloaded data from yahoo, daily for last year
+a <- readr::read_csv('UGAZ.csv')
+a2018 <- readr::read_csv('UGAZMarch2018-2019.csv')
+
+b <- a %>%  
+    mutate(closeDiff = Close - lag(Close), dayNo = day(Date)) %>% 
+    select(Date, dayNo, closeDiff) %>% 
+    na.omit() %>% 
+    mutate(period = case_when(dayNo %in% period1 ~ "first",
+                              dayNo %in% period2 ~ "second",
+                              TRUE ~ "third"
+                              ))
+
+b2018 <- a2018 %>%  
+  mutate(closeDiff = Close - lag(Close), dayNo = day(Date)) %>% 
+  select(Date, dayNo, closeDiff) %>% 
+  na.omit() %>% 
+  mutate(period = case_when(dayNo %in% period1 ~ "first",
+                            dayNo %in% period2 ~ "second",
+                            TRUE ~ "third"
+  ))
+
+b %>% group_by(period)  %>% 
+      summarize(summedDiff = sum(closeDiff))
+
+b2018 %>% group_by(period)  %>% 
+  summarize(summedDiff = sum(closeDiff))
+
+union_all(b, b2018) %>% group_by(period)  %>% 
+       summarize(summedDiff = sum(closeDiff))
+
+View(union_all(b, b2018) %>% group_by(dayNo)  %>% 
+  summarize(summedDiff = sum(closeDiff)))
+
+union_all(b, b2018) %>% filter(dayNo == 15)
 
