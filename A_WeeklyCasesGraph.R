@@ -3,21 +3,22 @@
 ##  Andrew Borst 
 ##  Last Update 4/10/20
 ##:::::::::::::::::::::::::::::::::
-
 library(tidyverse)
 library(readr)
 library(lubridate)
 library(reshape2)
 library(odbc)
+library(jsonlite)
 
-#setwd(paste(getwd(), "/R", sep = ""))
+j <- read_json("configuration.json")
+login <- j[[1]]$login
 
 con <- dbConnect(odbc(),
                  Driver = "SQL Server",
                  Server = "IN-SQL01",
                  Database = "COIN",
-                 UID = "",
-                 PWD = "", #rstudioapi::askForPassword(),
+                 UID = login,
+                 PWD = rstudioapi::askForPassword(),
                  Port = 1433)
 
 v <- dbGetQuery(con, "SELECT * FROM vwReportKeyData")
