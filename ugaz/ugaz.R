@@ -1,8 +1,10 @@
 # analyze ugaz 
 # 1. Does UGAZ lose more value during rollover period?
-library(tidyverse)
+library(skimr)
 library(lubridate)
-setwd("C:/Users/aborst/R-SCRIPTS/ugaz")
+library(tidymodels)
+
+setwd("C:/Users/My Surface/Documents/R-SCRIPTS/ugaz")
 
 period1 <- cbind(1,2,3,4,5,6,7,8,9,10)
 period2 <- cbind(11,12,13,14,15,16,17,18,19,20)
@@ -19,7 +21,13 @@ b <- a %>%
                               dayNo %in% period2 ~ "second",
                               TRUE ~ "third"
                               ))
-
+skim(b)
+ccc(b,closeDiff,dayNo)
+lmmodel <- linear_reg() %>% 
+  set_engine("lm") %>% 
+  fit(closeDiff~period,data=b)
+  
+tidy(lmmodel)
 b2018 <- a2018 %>%  
   mutate(closeDiff = Close - lag(Close), dayNo = day(Date)) %>% 
   select(Date, dayNo, closeDiff) %>% 
