@@ -10,6 +10,8 @@ library(reshape2)
 library(odbc)
 library(jsonlite)
 
+setwd("C:/Users/aborst/Documents")
+
 j <- read_json("configuration.json")
 login <- j[[1]]$login
 
