@@ -14,7 +14,7 @@ a <- readr::read_csv('UGAZ.csv')
 a2018 <- readr::read_csv('UGAZMarch2018-2019.csv')
 
 b <- a %>%  
-    mutate(closeDiff = Close - lag(Close), dayNo = day(Date)) %>% 
+    mutate(closeDiff = (Close - lag(Close))/lag(Close), dayNo = day(Date)) %>% 
     select(Date, dayNo, closeDiff) %>% 
     na.omit() %>% 
     mutate(period = case_when(dayNo %in% period1 ~ "first",
@@ -29,25 +29,24 @@ lmmodel <- linear_reg() %>%
   
 tidy(lmmodel)
 b2018 <- a2018 %>%  
-  mutate(closeDiff = Close - lag(Close), dayNo = day(Date)) %>% 
+  mutate(closeDiff = (Close - lag(Close))/lag(Close), dayNo = day(Date)) %>%
   select(Date, dayNo, closeDiff) %>% 
   na.omit() %>% 
   mutate(period = case_when(dayNo %in% period1 ~ "first",
                             dayNo %in% period2 ~ "second",
-                            TRUE ~ "third"
-  ))
+                            TRUE ~ "third"))
 
-b %>% group_by(period)  %>% 
-      summarize(summedDiff = sum(closeDiff))
+g <- b %>% group_by(period)  %>% 
+      summarize(summedDiff = sum(closeDiff), mean_diff = mean(closeDiff))
+g
 
 b2018 %>% group_by(period)  %>% 
-  summarize(summedDiff = sum(closeDiff))
+  summarize(summedDiff = sum(closeDiff), mean_diff = mean(closeDiff))
 
 union_all(b, b2018) %>% group_by(period)  %>% 
-       summarize(summedDiff = sum(closeDiff))
+       summarize(summedDiff = sum(closeDiff), mean_diff = mean(closeDiff))
 
-View(union_all(b, b2018) %>% group_by(dayNo)  %>% 
-  summarize(summedDiff = sum(closeDiff)))
+
 
 union_all(b, b2018) %>% filter(dayNo == 15)
 
