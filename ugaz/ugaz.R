@@ -4,8 +4,8 @@ library(skimr)
 library(lubridate)
 library(tidymodels)
 
-#setwd("C:/Users/My Surface/Documents/R-SCRIPTS/ugaz")
-setwd("C:/Users/aborst/R-SCRIPTS/ugaz")
+setwd("C:/Users/My Surface/Documents/R-SCRIPTS/ugaz")
+#setwd("C:/Users/aborst/R-SCRIPTS/ugaz")
 
 period1 <- cbind(1,2,3,4,5,6,7,8,9,10)
 period2 <- cbind(11,12,13,14,15,16,17,18,19,20)
@@ -24,16 +24,18 @@ b <- a %>%
                               )) %>% 
     mutate_if(is.character, as.factor)
 
- 
-  
-  ggplot(filter(b,period_group=="first"), aes(groupDiff)) +
-    geom_histogram()
-
-
 b %>%  
   ggplot(aes(closeDiff)) +
   geom_histogram() +
   facet_wrap( ~ period_group)
+
+filter(b, closeDiff < .20 & closeDiff > -.20) %>%  
+  ggplot(aes(closeDiff, fill=period_group)) +
+  geom_boxplot() 
+
+  facet_wrap( ~ period_group)
+
+filter(b, closeDiff < 0.20 & period_group == "first") %>% skim(closeDiff)
 
 skim(b)
 ccc(b,closeDiff,dayNo)
@@ -68,4 +70,6 @@ union_all(b, b2018) %>% group_by(period)  %>%
 
 
 union_all(b, b2018) %>% filter(dayNo == 15)
+
+x[Sample(0:1,5, replace = TRUE)]
 
