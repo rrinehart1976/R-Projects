@@ -1,29 +1,16 @@
 ##:::::::::::::::::::::::::::::::::
 ##  Graphs weekly cases counts and average cabinet price.
 ##  Andrew Borst 
-##  Last Update 4/10/20
+##  Last Update 5/27/20
 ##:::::::::::::::::::::::::::::::::
 library(tidyverse)
+library(tidyquant)
 library(readr)
 library(lubridate)
 library(reshape2)
-library(odbc)
-library(jsonlite)
+source(file = "Data_Access/database_functions.R")
 
-setwd("C:/Users/aborst/Documents")
-
-j <- read_json("configuration.json")
-login <- j[[1]]$login
-
-con <- dbConnect(odbc(),
-                 Driver = "SQL Server",
-                 Server = "IN-SQL01",
-                 Database = "COIN",
-                 UID = login,
-                 PWD = rstudioapi::askForPassword(),
-                 Port = 1433)
-
-v <- dbGetQuery(con, "SELECT * FROM vwReportKeyData")
+v <- sql01_view("Coin", "vwReportKeyData")
 
 v$SubmittedDate <- as.Date(v$SubmittedDate)
 
@@ -47,9 +34,17 @@ weeklyBoth <- caseorders %>%
   mutate(Brand = "Both")  
   
 
-ggplot(weeklyBrand) +
+ggplot(weeklyBrand, aes(weekNo, Cases)) +
   geom_bar(aes(weekNo, Cases, fill=Brand), stat="identity") +
   geom_line(aes(weekNo, CaseAverage, color=Brand)) +
-  geom_line(data=weeklyBoth, aes(weekNo, CaseAverage))
+  geom_line(data=weeklyBoth, aes(weekNo, CaseAverage)) 
+  
+ggplot(weeklyBoth, aes(weekNo, Cases)) +
+  geom_bar(aes(weekNo, Cases), stat="identity") +
+  geom_line(aes(weekNo, CaseAverage)) +
+  geom_line(data=weeklyBoth, aes(weekNo, CaseAverage)) +
+  geom_ma(ma_fun = SMA, n=5, color = "red") + 
+  theme_bw() +
+  theme(panel.ontop = TRUE, panel.background = element_rect(color = NA, fill = NA))
 
 
