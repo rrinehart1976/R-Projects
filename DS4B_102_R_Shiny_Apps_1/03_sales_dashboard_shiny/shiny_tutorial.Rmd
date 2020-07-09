@@ -66,6 +66,22 @@ sliderInput(inputId = "slider_input",
 ```{r}
 # Reset Button
 
+actionButton(inputId = "reset",
+             label = "Reset",
+             icon = icon("sync"))
+
+observeEvent(eventExpr = input$reset, handlerExpr = {
+    updateCheckboxGroupInput(session = session, 
+                             inputId = "checkbox_group",
+                             selected = c("marketing", "research","sales"))
+    updateDateRangeInput(session = session,
+                         inputId = "date_range",
+                         start = "2020-01-01",
+                         end = max(sales_data_tbl$date))
+    updateSliderInput(session = session,
+                      inputId = "slider_input",
+                    value = c(40,60))
+})
 ```
 
 
@@ -123,10 +139,13 @@ sales_data_filtered <- reactive({
 ```{r}
 
 #renderPrint( sales_data_filtered() )
-DT::renderDataTable(expr = {
+
+output$dt_output_1 <- DT::renderDataTable(expr = {
     sales_data_filtered() %>% 
-        mutate(sales = scales::dollar((sales)))
+        mutate(sales = scales::dollar(sales))
 }, options = list(scrollY = "250px"))
+
+DTOutput(outputId = "dt_output_1")
 
 ```
 
@@ -135,6 +154,15 @@ DT::renderDataTable(expr = {
 
 ```{r}
 
+output$dt_output_2 <- DT::renderDataTable(expr = {
+    sales_data_filtered() %>% 
+        group_by(class) %>% 
+        summarize(total_revenue = sum(sales)) %>% 
+        ungroup() %>% 
+        mutate(total_revenue = scales::dollar(total_revenue))
+}, options = list(scrollY = "250px"))
+
+DTOutput(outputId = "dt_output_2")
 
 ```
 
