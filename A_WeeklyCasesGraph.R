@@ -4,6 +4,7 @@
 ##  Last Update 4/10/20
 ##:::::::::::::::::::::::::::::::::
 library(tidyverse)
+library(tidyquant)
 library(readr)
 library(lubridate)
 library(reshape2)
@@ -47,9 +48,17 @@ weeklyBoth <- caseorders %>%
   mutate(Brand = "Both")  
   
 
-ggplot(weeklyBrand) +
+ggplot(weeklyBrand, aes(weekNo, Cases)) +
   geom_bar(aes(weekNo, Cases, fill=Brand), stat="identity") +
   geom_line(aes(weekNo, CaseAverage, color=Brand)) +
-  geom_line(data=weeklyBoth, aes(weekNo, CaseAverage))
+  geom_line(data=weeklyBoth, aes(weekNo, CaseAverage)) 
+  
+ggplot(weeklyBoth, aes(weekNo, Cases)) +
+  geom_bar(aes(weekNo, Cases), stat="identity") +
+  geom_line(aes(weekNo, CaseAverage)) +
+  geom_line(data=weeklyBoth, aes(weekNo, CaseAverage)) +
+  geom_ma(ma_fun = SMA, n=5, color = "red") + 
+  theme_bw() +
+  theme(panel.ontop = TRUE, panel.background = element_rect(color = NA, fill = NA))
 
 
