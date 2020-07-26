@@ -1,0 +1,12 @@
+name: shiny_tutorial
+title: shiny_tutorial
+username:
+account: andrew-borst
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2549244
+bundleId: 3368190
+url: https://andrew-borst.shinyapps.io/shiny_tutorial/
+when: 1594228554.72056
+asMultiple: FALSE
+asStatic: FALSE

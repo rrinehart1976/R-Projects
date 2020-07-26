@@ -44,3 +44,4 @@ docs/
 #company data
 # pkgdown site
 PrivateData/
+.Rproj.user
