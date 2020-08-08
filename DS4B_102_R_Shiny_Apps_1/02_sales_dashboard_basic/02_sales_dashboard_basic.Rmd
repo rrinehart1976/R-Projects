@@ -62,6 +62,7 @@ geo_plot_tbl <- processed_data_tbl %>%
 
 
 ```{r}
+
 geo_plot_tbl %>%
     plot_geo(locationmode = "USA-states") %>%
     add_trace(z         = ~total_revenue, 

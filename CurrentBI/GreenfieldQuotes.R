@@ -47,10 +47,13 @@ library(lubridate)
 library(skimr)
 
 gp <- read_csv("C:/Users/aborst/R-Scripts/PrivateData/GF_Quotes2020.csv")
-Coin_Orders <- read_csv("C:/Users/aborst/R-Scripts/PrivateData/Coin Orders.csv")
+
+source(file = "Data_Access/database_functions.R")
+
+v <- sql01_view("Coin", "vwReportKeyData")
 
 
-coin_submitted <- Coin_Orders %>% 
+coin_submitted <- v %>% 
     filter(Brand=="Greenfield") %>% 
     filter(!str_detect(JobNumber, "[Tt]est"))  %>% 
     filter(!is.na(SubmittedDate))
