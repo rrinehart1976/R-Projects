@@ -1,68 +1,40 @@
----
-title: "Sales Dashboard"
-output: 
-  flexdashboard::flex_dashboard:
-    orientation: columns
-    vertical_layout: fill
-runtime: shiny
----
-
-```{r setup, include=FALSE}
-library(flexdashboard)
-library(shiny)
-library(shinyWidgets)
+# Create sumbitted vs invoiced graph 
+# Author: Andrew Borst
+# Created: 08/10/2020
+# Last Updated: 08/10/2020 
 
 # Core
 library(tidyverse)
 library(tidyquant)
 
-# Interactive Visualizations
-library(plotly)
+source(file = "Data_Access/database_functions.R")
 
-# Database
-library(odbc)
-library(RSQLite)
-```
-
-```{r}
-con <- dbConnect(RSQLite::SQLite(), "../00_data/bikes_database.db")
+v <- sql01_view("Coin", "vwReportKeyData")
 # con <- dbConnect(RSQLite::SQLite(), "00_data/bikes_database.db")
 
-# dbListTables(con)
-bikes_tbl <- tbl(con, "bikes")
-bikeshops_tbl <- tbl(con, "bikeshops")
-orderlines_tbl <- tbl(con, "orderlines")
-
-processed_data_tbl <- orderlines_tbl %>%
-    left_join(bikeshops_tbl, by = c("customer.id" = "bikeshop.id")) %>%
-    left_join(bikes_tbl, by = c("product.id" = "bike.id")) %>%
-    mutate(extended_price = quantity * price) %>%
+processed_data_tbl1 <- v %>%
+    filter(year(SubmittedDate) == 2020) %>%
+    filter(!(OrderStatus %in% c("cancelled","Cancelled"))) %>% 
+    filter(HasCharge == "TRUE") %>% 
+    mutate_if(is.numeric, funs(ifelse(is.na(.), 0, .))) %>% 
+    mutate(extended_price = OrderTotal + AdjustPrice) %>% 
     collect()
 
-processed_data_tbl <- processed_data_tbl %>%    
-    mutate(order.date = ymd(order.date)) %>%
-    separate(location, into = c("city", "state"), sep = ", ") %>%
-    
-    separate(description, 
-             into = c("category_1", "category_2", "frame_material"),
-             sep = " - ") %>%
-    
-    select(order.date, order.id, order.line, state, quantity, price,
-           extended_price, category_1:frame_material)
-    
-# processed_data_tbl
+processed_data_tbl <- processed_data_tbl1 %>%    
+    mutate(order.date = as.Date(SubmittedDate)) %>%
+    select(order.date, order.id = ShopFloorNumber, state = State, extended_price,  category_1 = Brand, category_2 = RepName)
 
-dbDisconnect(con)
 ```
 
 Column {.sidebar}
 ---------------------------------------------------------------
 
 ```{r}
+useShinyjs(rmd = TRUE)
 
 dateRangeInput(
   inputId = "date_range", 
-  label   = h4("Date Range"),
+  label   = h4("Submitted Range"),
   start   = min(processed_data_tbl$order.date), 
   end     = max(processed_data_tbl$order.date), 
   min     = min(processed_data_tbl$order.date), 
@@ -72,7 +44,7 @@ dateRangeInput(
 
 shinyWidgets::checkboxGroupButtons(
   inputId   = "checkbox_category_1", 
-  label     = h4("Bike Type"), 
+  label     = h4("Brand"), 
   choices   = unique(processed_data_tbl$category_1), 
   selected  = unique(processed_data_tbl$category_1), 
   checkIcon = list(
@@ -82,7 +54,7 @@ shinyWidgets::checkboxGroupButtons(
 
 shinyWidgets::pickerInput(
   inputId  = "picker_category_2", 
-  label    = h4("Bike Family"), 
+  label    = h4("Rep Agency"), 
   choices  = unique(processed_data_tbl$category_2), 
   selected = unique(processed_data_tbl$category_2), 
   multiple = TRUE,
@@ -96,6 +68,8 @@ shinyWidgets::pickerInput(
 br()
 hr()
 br()
+
+actionButton(inputId = "apply", label = "Apply", icon = icon("play"))
 
 actionButton(inputId = "reset", label = "Reset", icon = icon("sync"))
 
@@ -117,6 +91,17 @@ observeEvent(eventExpr = input$reset, handlerExpr = {
     start   = min(processed_data_tbl$order.date), 
     end     = max(processed_data_tbl$order.date))
   
+  updateRadioGroupButtons(
+    session = session, 
+    inputId = "time_unit", 
+    selected = "month"
+  )
+  
+  shinyjs::delay(ms = 300, expr = {
+    shinyjs::click(id = "apply")
+  })
+ 
+  
 })
 
 # renderPrint(input$date_range)
@@ -126,8 +111,99 @@ observeEvent(eventExpr = input$reset, handlerExpr = {
 # renderText(input$checkbox_category_1)
 ```
 
+```{r}
+processed_data_filtered_tbl <- eventReactive(
+  eventExpr = input$apply, 
+                                             
+  valueExpr = {
+  
+    processed_data_tbl %>%
+      
+      filter(order.date %>% between(left  = input$date_range[1], 
+                                    right = input$date_range[2])) %>%
+  
+      filter(category_1 %in% input$checkbox_category_1) %>%
+      
+      filter(category_2 %in% input$picker_category_2)
+  },
+  ignoreNULL = FALSE
+)
+```
 
-Column {data-width=600}
+Row {data-height=150}
+---------------------------------------------------------------
+
+```{r}
+summary_values_tbl <- reactive({
+  
+  processed_data_filtered_tbl() %>%
+  
+    summarize(
+      health_metric = unique(order.id) %>% length(),
+      wealth_metric = sum(extended_price),
+      wise_metric   = (sum(str_detect(category_1, "Siteline")) / (sum(str_detect(category_1, "Greenfield")) + 0.0001)) %>% 
+        round(1)
+    ) %>%
+    mutate(
+      health_metric = health_metric %>% scales::number(big.mark = ","),
+      wealth_metric = wealth_metric %>% scales::dollar(scale = 1e-6, accuracy = 0.1, suffix = "M")
+    )
+  
+})
+
+# renderPrint(summary_values_tbl())
+
+```
+
+
+### Health
+
+```{r}
+renderValueBox({
+  
+  valueBox(
+    value   = summary_values_tbl()$health_metric, 
+    caption = "Orders", 
+    icon    = "fa-heartbeat", 
+    color   = "success")
+  
+})
+
+
+```
+
+
+### Wealthy
+
+```{r}
+renderValueBox({
+  
+  valueBox(
+    value   = summary_values_tbl()$wealth_metric, 
+    caption = "Sales", 
+    icon    = "fa-money-check-alt", 
+    color   = "primary")
+  
+})
+```
+
+
+### Wise
+
+```{r}
+renderValueBox({
+  
+  valueBox(
+    value   = summary_values_tbl()$wise_metric, 
+    caption = "Ratio, Siteline to Greenfield", 
+    icon    = "fa-brain", 
+    color   = "info")
+  
+})
+```
+
+
+Row {data-height=850}
 ---------------------------------------------------------------
 
 ### By State
@@ -136,14 +212,7 @@ Column {data-width=600}
 
 geo_plot_tbl <- reactive({
 
-  processed_data_tbl %>%
-    
-    filter(order.date %>% between(left  = input$date_range[1], 
-                                  right = input$date_range[2])) %>%
-
-    filter(category_1 %in% input$checkbox_category_1) %>%
-    
-    filter(category_2 %in% input$picker_category_2) %>%
+  processed_data_filtered_tbl() %>%
 
     group_by(state) %>%
     summarise(total_revenue = sum(extended_price)) %>%
@@ -188,16 +257,32 @@ plotlyOutput(outputId = "plotly_1")
 
 ```
 
-Column {data-width=400}
--------------------------------------------------------------------
+
 
 ### Over Time
 
 ```{r}
+shinyWidgets::radioGroupButtons(
+  inputId  = "time_unit", 
+  label    = "Time Unit", 
+  choices  = c("D" = "day", "W" = "week", "M" = "month", "Q" = "quarter", "Y" = "year"), 
+  selected = "month", 
+  status   = "primary", 
+  justified = TRUE, 
+  checkIcon = list(
+    yes = icon("ok", lib = "glyphicon"), 
+    no  = NULL
+    )
+)
+```
 
-time_unit <- "month"
 
-time_plot_tbl <- processed_data_tbl %>%
+```{r}
+time_plot_tbl <- reactive({
+  
+  time_unit <- input$time_unit
+  
+  processed_data_filtered_tbl() %>%
     
     mutate(date = floor_date(order.date, unit = time_unit)) %>%
     
@@ -208,9 +293,15 @@ time_plot_tbl <- processed_data_tbl %>%
     mutate(label_text = str_glue("Date: {date}
                                  Revenue: {scales::dollar(total_sales)}"))
   
+})
+  
+# renderPrint({
+#   time_plot_tbl()
+# })
 
-
-g <- time_plot_tbl %>%
+output$plotly_2 <- renderPlotly({
+  
+  g <- time_plot_tbl() %>%
     ggplot(aes(date, total_sales)) +
   
     geom_line(color = "#2c3e50") +
@@ -222,10 +313,12 @@ g <- time_plot_tbl %>%
     scale_y_continuous(labels = scales::dollar_format()) +
     labs(x = "", y = "")
   
-ggplotly(g, tooltip = "text") 
+  ggplotly(g, tooltip = "text") %>%
+    layout(margin = list(b = 200))
   
+})
 
+plotlyOutput(outputId = "plotly_2")
   
 ```
-
 
