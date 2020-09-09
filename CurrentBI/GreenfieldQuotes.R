@@ -42,11 +42,10 @@
 # where a.CurInd = 1
 
 library(tidymodels)
-library(stringr)
-library(lubridate)
 library(skimr)
+library(tidyverse)
 
-gp <- read_csv("C:/Users/aborst/R-Scripts/PrivateData/GF_Quotes2020.csv")
+gp <- read_csv("C:/Users/aborst/Documents/R-Projects/CurrentBI/PrivateData/GF_Quotes2020.csv")
 
 source(file = "Data_Access/database_functions.R")
 
@@ -77,7 +76,7 @@ gp_submitted <- gp %>%
 gpplot <- union_all(gp2, gp_submitted)
 
 ggplot(data = gpplot, aes(weekNo, orderTotal, fill=status)) +
-  geom_bar(stat="identity", position ="dodge") +
+  geom_line(stat="identity", position ="dodge") +
   scale_y_continuous(labels = function(x) format(x, scientific = FALSE)) 
 
 gp1 <- gp %>% 

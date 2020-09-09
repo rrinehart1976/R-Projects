@@ -24,3 +24,64 @@ sql01_view <- function(database_name, database_view)
     dbGetQuery(con, glue::glue("SELECT * FROM ", database_view))
     
   } 
+
+sql01_table <- function(database_name, database_table)
+{
+  library(odbc)
+  library(jsonlite)
+  
+  j <- read_json("PrivateData/configuration.json")
+  login <- j[[1]]$login
+  pwd <- j[[1]]$password
+  
+  con <- dbConnect(odbc(),
+                   Driver = "SQL Server",
+                   Server = "IN-SQL01",
+                   Database = database_name,
+                   UID = login,
+                   PWD = pwd,
+                   Port = 1433)
+  
+  dbGetQuery(con, glue::glue("SELECT * FROM ", database_table))
+  
+} 
+
+sql01_query <- function(database_name, database_query)
+{
+  library(odbc)
+  library(jsonlite)
+  
+  j <- read_json("PrivateData/configuration.json")
+  login <- j[[1]]$login
+  pwd <- j[[1]]$password
+  
+  con <- dbConnect(odbc(),
+                   Driver = "SQL Server",
+                   Server = "IN-SQL01",
+                   Database = database_name,
+                   UID = login,
+                   PWD = pwd,
+                   Port = 1433)
+  
+  dbGetQuery(con, glue::glue(database_query))
+  
+} 
+
+sql01_con <- function(database_name)
+{
+  library(odbc)
+  library(jsonlite)
+  
+  j <- read_json("PrivateData/configuration.json")
+  login <- j[[1]]$login
+  pwd <- j[[1]]$password
+  
+  con <- dbConnect(odbc(),
+                   Driver = "SQL Server",
+                   Server = "IN-SQL01",
+                   Database = database_name,
+                   UID = login,
+                   PWD = pwd,
+                   Port = 1433)
+
+} 
