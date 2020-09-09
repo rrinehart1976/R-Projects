@@ -8,11 +8,12 @@ runtime: shiny
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = FALSE, message = FALSE,warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(DT)
 ```
 
 ```{r, echo=FALSE}
-library(tidyverse)
-library(lubridate)
 source(file = "Data_Access/database_functions.R")
 
 conn <- sql01_con("Coin")
@@ -127,6 +128,8 @@ projectm <- project %>%
 
 ```
 
+
+
 Elkins 
 ===================================== 
 
@@ -134,7 +137,30 @@ Elkins
 
 
 ```{r, echo=FALSE}
-DT::renderDataTable(DT::datatable(elkinsm, options = list(paging = FALSE, searching = FALSE), rownames = FALSE)) 
+sketch <- htmltools::tags$table(
+    tableHeader(names(elkinsm)),
+    tableFooter(rep("", ncol(elkinsm)))
+  )
+
+opts <- list(paging = FALSE, searching = FALSE,
+  footerCallback = JS(
+    "function(tfoot, data, start, end, display) {",
+    "  var api = this.api();",
+    "  var intVal = function ( i ) { ",
+    "    return typeof i === 'string' ? ",
+    "    i.replace(/[\\$,]/g, '')*1 : ",
+    "    typeof i === 'number' ? i : 0; ",
+    "    };",
+    "  var i = 2;",
+    "    $(api.column(i).footer()).html(",
+    "      api.column(i, {page:'all'}).data().reduce(function(a,b){",
+    "        if(isNaN(a)) return ''; return intVal(a) + intVal(b);",
+    "      })",
+    "    );",
+    "}")
+  )
+
+DT::renderDataTable(DT::datatable(elkinsm, container = sketch, options = opts, rownames = FALSE)) 
 ```
 
 
@@ -147,7 +173,16 @@ Indy
 DT::renderDataTable(DT::datatable(indym, options = list(paging = FALSE, searching = FALSE), rownames = FALSE)) 
 ```
 
-Scheduled
+Totals
+===================================== 
+### 
+
+```{r, echo=FALSE}
+DT::renderDataTable(DT::datatable(projectm, options = list(paging = FALSE, searching = FALSE), rownames = FALSE)) 
+```
+
+
+Projected
 ===================================== 
 ### Projected
 
