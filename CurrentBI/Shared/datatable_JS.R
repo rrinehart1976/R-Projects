@@ -19,11 +19,12 @@ js_op_aux <- function(type, df = NULL) {
 #' Totals Row for datatables
 #' 
 #' @param column Integer. Starting from 0, which column to operate
+#' @param format Character. Select from currency or comma
 #' @param operation Character. Select from sum, mean, count, custom
 #' @param txt Character. Insert text before (or instead) operation
 #' @param signif Integer. How many decimals to consider when operating
 #' @export
-js_op <- function(column, operation, txt = "", signif = 3) {
+js_op <- function(column, operation, format = "", txt = "", signif = 3) {
   
   # Auxiliar function for mean
   aux <- ifelse(
@@ -35,18 +36,31 @@ js_op <- function(column, operation, txt = "", signif = 3) {
   
   # Operation
   if (operation %in% c("sum", "mean"))
-    operation <- paste0("Math.round((a+b)*",signif,")/",signif)
+    script <- paste0("Math.round((a+b)*",signif,")/",signif)
   if (operation == "count")
-    operation <- "data.length"
+    script <- "data.length"
   if (operation == "custom")
     return(paste0("$(api.column(", column, ").footer()).html('", txt, "')"))
   
-  # Result
-  res <- paste0(
+  if (format == "currency"){
+    res <- paste0(
+    "", 
     "$(api.column(", column, ").footer()).html('", txt, "'+",
-    "api.column(", column, ").data().", aux, "reduce( function ( a, b ) {",
-    "return ", operation, ";",
-    "} ));")  
+    "Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0,
+  maximumFractionDigits: 0 }).format",
+    "(api.column(", column, ").data().", aux, "reduce( function ( a, b ) {",
+    "return ", script, ";})));"
+    )  
+  }
+    
+  if (format == ""){
+    res <- paste0(
+      "$(api.column(", column, ").footer()).html('", txt, "'+",
+      "api.column(", column, ").data().", aux, "reduce( function ( a, b ) {",
+      "return ", script, ";",
+      "} ));")  
+    
+  }
   return(res)
 }
 

@@ -13,7 +13,6 @@ library(lubridate)
 library(DT)
 source(file = "Data_Access/database_functions.R")
 source(file = "Shared/datatable_JS.R")
-opts <- list(paging = FALSE, searching = FALSE)
 ```
 
 ```{r, echo=FALSE}
@@ -177,17 +176,17 @@ javascript <- JS(
   # js_op(1, operation = "count", txt = "Contador: "),
   js_op(0, operation = "custom", txt = "Total: "),
   js_op(1, operation = "sum"),
-  js_op(2, operation = "sum", signif = 0),
-  js_op(3, operation = "mean", signif = 0),
+  js_op(2, format = "currency",operation = "sum", signif = 0),
+  js_op(3, format = "currency", operation = "mean", signif = 0),
   js_op(4, operation = "sum"),
-  js_op(5, operation = "sum", signif = 0),
-  js_op(6, operation = "mean", signif = 0),
+  js_op(5, format = "currency", operation = "sum", signif = 0),
+  js_op(6, format = "currency", operation = "mean", signif = 0),
   js_op(7, operation = "sum"),
-  js_op(8, operation = "sum", signif = 0),
-  js_op(9, operation = "mean", signif = 0),
+  js_op(8, format = "currency", operation = "sum", signif = 0),
+  js_op(9, format = "currency", operation = "mean", signif = 0),
   js_op(10, operation = "sum"),
-  js_op(11, operation = "sum", signif = 0),
-  js_op(12, operation = "mean", signif = 0),
+  js_op(11, format = "currency", operation = "sum", signif = 0),
+  js_op(12, format = "currency", operation = "mean", signif = 0),
   # js_op(3, operation = "custom", txt = "ALGO"),
   js_op_aux("end")
   )
@@ -202,7 +201,7 @@ Indy
 ### Indy 
 
 ```{r, echo=FALSE}
-indydt <- datatable(indym, container = js_op_aux("sketch", elkinsm), options = list(paging = FALSE, searching = FALSE, footerCallback = javascript), rownames = FALSE) %>% 
+indydt <- datatable(indym, container = js_op_aux("sketch", indym), options = list(paging = FALSE, searching = FALSE, footerCallback = javascript), rownames = FALSE) %>% 
   formatCurrency(c(3:4,6:7,9:10,12:13), digits = 0) 
 renderDataTable(indydt)
 ```
@@ -212,17 +211,17 @@ Combined
 ### Combined Elkins and Indy (Weekly) 
 
 ```{r, echo=FALSE}
-weeklydt <- datatable(combined_weekly, container = js_op_aux("sketch", elkinsm), options = list(paging = FALSE, searching = FALSE, footerCallback = javascript), rownames = FALSE) %>%   formatCurrency(c(3:4,6:7,9:10,12:13), digits = 0) 
+weeklydt <- datatable(combined_weekly, container = js_op_aux("sketch", combined_weekly), options = list(paging = FALSE, searching = FALSE, footerCallback = javascript), rownames = FALSE) %>%   formatCurrency(c(3:4,6:7,9:10,12:13), digits = 0) 
 renderDataTable(weeklydt)
 ```
 
 
-Projected
+Preschedule
 ===================================== 
-### Projected
+### Before Scheduling
 
 ```{r, echo=FALSE}
-projectdt <- datatable(projectm, container = js_op_aux("sketch", elkinsm), options = list(paging = FALSE, searching = FALSE, footerCallback = javascript), rownames = FALSE) %>%   formatCurrency(c(3:4,6:7,9:10,12:13), digits = 0) 
+projectdt <- datatable(projectm, container = js_op_aux("sketch", projectm), options = list(paging = FALSE, searching = FALSE, footerCallback = javascript), rownames = FALSE) %>%   formatCurrency(c(3:4,6:7,9:10,12:13), digits = 0) 
 renderDataTable(projectdt)
 ```
 
