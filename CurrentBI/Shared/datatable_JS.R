@@ -26,16 +26,16 @@ js_op_aux <- function(type, df = NULL) {
 #' @export
 js_op <- function(column, operation, format = "", txt = "", signif = 3) {
   
-  # Auxiliar function for mean
+  # function for mean
   aux <- ifelse(
     operation == "mean", 
-    paste0("map(function(num) { return num/data.length; })."), "")
-  
+    # paste0("map(function(num) { return num / data.length; })."), "")
+    paste0("map(function(num) { return num / data.filter(x => x != '$0').length; })."), "")
+
   # Decimals to consider
   signif <- 10^signif
   
-  # Operation
-  if (operation %in% c("sum", "mean"))
+  # Operation  if (operation %in% c("sum", "mean"))
     script <- paste0("Math.round((a+b)*",signif,")/",signif)
   if (operation == "count")
     script <- "data.length"
