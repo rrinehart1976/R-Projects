@@ -1,0 +1,226 @@
+---
+title: "Scheduling"
+output: 
+  flexdashboard::flex_dashboard:
+  vertical_layout: scroll
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = FALSE,warning = FALSE)
+library(tidyverse)
+library(lubridate)
+library(DT)
+source(file = "Data_Access/database_functions.R")
+source(file = "Shared/datatable_JS.R")
+```
+
+```{r, echo=FALSE}
+conn <- sql01_con("Coin")
+
+#db_list_tables(conn) %>% .[matches("eek",vars=.)]
+#   
+# Weeks <- tbl(conn,"Weeks") %>%
+#   collect()
+LineMap <- tbl(conn,"ddfJobType") %>%
+  select(JobPrefix, ProductLine) %>%
+  mutate(JobPrefix = str_trim(JobPrefix)) %>% 
+  filter(!is.na(ProductLine)) %>% 
+  collect()
+
+weekRange <- c(seq(isoweek(today()), isoweek(today()) + 9))
+mindate = today() - 7
+
+vw <- tbl(conn,"vwReportKeyData") %>% 
+  select(Brand, OrderStatus, ScheduledCompleteDate, Plant, ReceivedDate, OrderCaseTotal, ShopFloorNumber, OrderTotal) %>% 
+  filter(OrderStatus != "Cancelled" & OrderStatus != "cancelled" & (ScheduledCompleteDate == "2001-01-01" | ScheduledCompleteDate > mindate | is.na(ScheduledCompleteDate))) %>% 
+  collect()
+
+t <- vw %>%
+  filter(!is.na(ReceivedDate) & !is.na(OrderCaseTotal) & OrderCaseTotal != 0)  %>% 
+  mutate(JobPrefix = str_sub(ShopFloorNumber, 1, 2)) %>%
+  mutate(weekNo = if_else(year(ScheduledCompleteDate) == 2001 | is.na(ScheduledCompleteDate), 99, isoweek(ScheduledCompleteDate)))
+```
+
+```{r, echo=FALSE}
+  
+sked <- inner_join(t,LineMap,by="JobPrefix") %>% 
+  select(weekNo, OrderCaseTotal,OrderTotal, Brand, Plant, ProductLine) %>% 
+  filter(weekNo %in% weekRange) %>%
+  filter(ProductLine %in% c("Framed", "Full Access")) %>% 
+  group_by(weekNo, Brand, Plant, ProductLine) %>% 
+  summarise(Cases = sum(OrderCaseTotal), Dollars = sum(OrderTotal)) %>%
+  ungroup() 
+
+elkins <- sked %>% 
+  filter(Plant == "Elkins") %>% 
+  pivot_wider(names_from = c("Brand", "ProductLine"), values_from = c("Cases", "Dollars")) %>% 
+  mutate_if(is.numeric, coalesce, ... = 0) %>% 
+  mutate(total_cases = Cases_Greenfield_Framed + `Cases_Greenfield_Full Access` + `Cases_Siteline_Full Access`) %>% 
+  mutate(total_dollars = Dollars_Greenfield_Framed + `Dollars_Greenfield_Full Access` + `Dollars_Siteline_Full Access`) %>% 
+  mutate(total_avg_case = (Dollars_Greenfield_Framed + `Dollars_Greenfield_Full Access` + `Dollars_Siteline_Full Access`) / (Cases_Greenfield_Framed + `Cases_Greenfield_Full Access` + `Cases_Siteline_Full Access`))
+
+indy <- sked %>% 
+  filter(Plant == "Indy") %>% 
+  pivot_wider(names_from = c("Brand", "ProductLine"), values_from = c("Cases", "Dollars"))  %>% 
+  mutate_if(is.numeric, coalesce, ... = 0) %>% 
+  mutate(total_cases = Cases_Greenfield_Framed + `Cases_Greenfield_Full Access` + `Cases_Siteline_Full Access`) %>% 
+  mutate(total_dollars = Dollars_Greenfield_Framed + `Dollars_Greenfield_Full Access` + `Dollars_Siteline_Full Access`) %>% 
+  mutate(total_avg_case = (Dollars_Greenfield_Framed + `Dollars_Greenfield_Full Access` + `Dollars_Siteline_Full Access`) / (Cases_Greenfield_Framed + `Cases_Greenfield_Full Access` + `Cases_Siteline_Full Access`))
+
+combined_weekly <- 
+  union(elkins, indy) %>%
+  group_by(weekNo) %>% 
+  summarise(
+      'Greenfield Framed' = sum(Cases_Greenfield_Framed),
+      'Greenfield Framed $' = sum(Dollars_Greenfield_Framed),
+      'Greenfield Framed Avg/Case' = sum(Dollars_Greenfield_Framed) / sum(Cases_Greenfield_Framed),
+      'Greenfield Full Access' = sum(`Cases_Greenfield_Full Access`),
+      'Greenfild Full Access $' = sum(`Dollars_Greenfield_Full Access`),
+      'Greenfield Full Access Avg/Case' = sum(`Dollars_Greenfield_Full Access`) / sum(`Cases_Greenfield_Full Access`),
+      'Siteline Full Access' = sum(`Cases_Siteline_Full Access`),
+      'Siteline Full Access $' = sum(`Dollars_Siteline_Full Access`),
+      'Siteline Full Access Avg/Case' = sum(`Dollars_Siteline_Full Access`) / sum(`Cases_Siteline_Full Access`),
+      'Total Cases' = sum(total_cases),
+      'Total $' = sum(total_dollars),
+      'Total Avg/Case' = mean(total_avg_case)
+    ) %>% 
+  ungroup() %>% 
+  mutate_if(is.numeric, coalesce, ... = 0)
+
+elkinsm <- elkins %>% 
+  transmute( 
+      'Week#' = weekNo,
+      'Greenfield Framed' = Cases_Greenfield_Framed,
+      'Greenfield Framed $' = Dollars_Greenfield_Framed,
+      'Greenfield Framed Avg/Case' =Dollars_Greenfield_Framed / Cases_Greenfield_Framed,
+      'Greenfield Full Access' = `Cases_Greenfield_Full Access`,
+      'Greenfild Full Access $' = `Dollars_Greenfield_Full Access`,
+      'Greenfield Full Access Avg/Case' = `Dollars_Greenfield_Full Access` / `Cases_Greenfield_Full Access`,
+      'Siteline Full Access' = `Cases_Siteline_Full Access`,
+      'Siteline Full Access $' = `Dollars_Siteline_Full Access`,
+      'Siteline Full Access Avg/Case' = `Dollars_Siteline_Full Access` / `Cases_Siteline_Full Access`,
+      'Total Cases' = total_cases,
+      'Total $' = total_dollars,
+      'Total Avg/Case' = total_avg_case
+  ) %>% 
+  mutate_if(is.numeric, coalesce, ... = 0)
+  
+
+indym <- indy %>% 
+  transmute( 
+      'Week#' = weekNo,
+      'Greenfield Framed' = Cases_Greenfield_Framed,
+      'Greenfield Framed $' = Dollars_Greenfield_Framed,
+      'Greenfield Framed Avg/Case' =Dollars_Greenfield_Framed / Cases_Greenfield_Framed,
+      'Greenfield Full Access' = `Cases_Greenfield_Full Access`,
+      'Greenfild Full Access $' = `Dollars_Greenfield_Full Access`,
+      'Greenfield Full Access Avg/Case' = `Dollars_Greenfield_Full Access` / `Cases_Greenfield_Full Access`,
+      'Siteline Full Access' = `Cases_Siteline_Full Access`,
+      'Siteline Full Access $' = `Dollars_Siteline_Full Access`,
+      'Siteline Full Access Avg/Case' = `Dollars_Siteline_Full Access` / `Cases_Siteline_Full Access`,
+      'Total Cases' = total_cases,
+      'Total $' = total_dollars,
+      'Total Avg/Case' = total_avg_case
+  ) %>% 
+  mutate_if(is.numeric, coalesce, ... = 0)
+  
+```
+
+```{r, echo=FALSE}
+projected <- inner_join(t,LineMap,by="JobPrefix") %>% 
+  select(weekNo, OrderStatus, OrderCaseTotal,OrderTotal, Brand, Plant, ProductLine) %>% 
+  filter(weekNo == 99) %>% 
+  filter(ProductLine %in% c("Framed", "Full Access")) %>% 
+  group_by(Brand, OrderStatus, ProductLine) %>% 
+  summarise(Cases = sum(OrderCaseTotal), Dollars = sum(OrderTotal)) %>% 
+  ungroup() %>% 
+  mutate_if(is.numeric, coalesce, ... = 0)
+
+
+project <- projected %>% 
+  filter(!is.na(Cases)) %>% 
+  pivot_wider(names_from = c("Brand", "ProductLine"), values_from = c("Cases", "Dollars")) %>% 
+  mutate_if(is.numeric, coalesce, ... = 0)
+
+projectm <- project %>% 
+  transmute(
+      'Order Status' = OrderStatus,
+      'Greenfield Framed' = Cases_Greenfield_Framed,
+      'Greenfield Framed $' = Dollars_Greenfield_Framed,
+      'Greenfield Framed Avg/Case' = Dollars_Greenfield_Framed / Cases_Greenfield_Framed,
+      'Greenfield Full Access' = `Cases_Greenfield_Full Access`,
+      'Greenfild Full Access $' = `Dollars_Greenfield_Full Access`, 
+      'Greenfield Full Access Avg/Case' = `Dollars_Greenfield_Full Access` / `Cases_Greenfield_Full Access`, 
+      'Siteline Full Access' = `Cases_Siteline_Full Access`,
+      'Siteline Full Access $' = `Dollars_Siteline_Full Access`,
+      'Siteline Full Access Avg/Case' = `Dollars_Siteline_Full Access` / `Cases_Siteline_Full Access`, 
+      'Total Cases' = Cases_Greenfield_Framed + `Cases_Greenfield_Full Access` + `Cases_Siteline_Full Access`,
+      'Total $' = Dollars_Greenfield_Framed + `Dollars_Greenfield_Full Access` + `Dollars_Siteline_Full Access`, 
+      'Total Avg/Case' = (Dollars_Greenfield_Framed + `Dollars_Greenfield_Full Access` + `Dollars_Siteline_Full Access`) / (Cases_Greenfield_Framed + `Cases_Greenfield_Full Access` + `Cases_Siteline_Full Access`)
+  ) %>% 
+  mutate_if(is.numeric, coalesce, ... = 0)
+
+
+javascript <- JS(
+  js_op_aux("start"),
+  # js_op(1, operation = "count", txt = "Contador: "),
+  js_op(0, operation = "custom", txt = "Total: "),
+  js_op(1, operation = "sum"),
+  js_op(2, format = "currency",operation = "sum", signif = 0),
+  # js_op(3, format = "currency", operation = "mean", signif = 0),
+  js_op(4, operation = "sum"),
+  js_op(5, format = "currency", operation = "sum", signif = 0),
+  # js_op(6, format = "currency", operation = "mean", signif = 0),
+  js_op(7, operation = "sum"),
+  js_op(8, format = "currency", operation = "sum", signif = 0),
+  # js_op(9, format = "currency", operation = "mean", signif = 0),
+  js_op(10, operation = "sum"),
+  js_op(11, format = "currency", operation = "sum", signif = 0),
+  js_op(12, format = "currency", operation = "mean", signif = 0),
+  js_op_aux("end")
+  )
+
+```
+
+Elkins 
+===================================== 
+
+### Elkins
+
+```{r, echo=FALSE}
+
+
+elkinsdt <- datatable(elkinsm, container = js_op_aux("sketch", elkinsm), options = list(paging = FALSE, searching = FALSE, footerCallback = javascript), rownames = FALSE) %>% formatCurrency(c(3:4,6:7,9:10,12:13), digits = 0) 
+renderDataTable(elkinsdt)
+```
+
+Indy
+===================================== 
+### Indy 
+
+```{r, echo=FALSE}
+indydt <- datatable(indym, container = js_op_aux("sketch", indym), options = list(paging = FALSE, searching = FALSE, footerCallback = javascript), rownames = FALSE) %>% 
+  formatCurrency(c(3:4,6:7,9:10,12:13), digits = 0) 
+renderDataTable(indydt)
+```
+
+Combined
+===================================== 
+### Combined Elkins and Indy (Weekly) 
+
+```{r, echo=FALSE}
+weeklydt <- datatable(combined_weekly, container = js_op_aux("sketch", combined_weekly), options = list(paging = FALSE, searching = FALSE, footerCallback = javascript), rownames = FALSE) %>%   formatCurrency(c(3:4,6:7,9:10,12:13), digits = 0) 
+renderDataTable(weeklydt)
+```
+
+
+Preschedule
+===================================== 
+### Before Scheduling
+
+```{r, echo=FALSE}
+projectdt <- datatable(projectm, container = js_op_aux("sketch", projectm), options = list(paging = FALSE, searching = FALSE, footerCallback = javascript), rownames = FALSE) %>%   formatCurrency(c(3:4,6:7,9:10,12:13), digits = 0) 
+renderDataTable(projectdt)
+```
+
