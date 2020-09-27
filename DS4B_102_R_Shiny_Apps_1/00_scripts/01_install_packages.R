@@ -26,3 +26,10 @@ r_pkgs <- c(
     )
 
 install.packages(r_pkgs)
+
+r_pkgs <- c(
+    "tidymodels",
+    "skimr"
+)
+
+install.packages(r_pkgs)
