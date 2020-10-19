@@ -4,6 +4,9 @@
 ##  Last Update 5/27/20
 ##:::::::::::::::::::::::::::::::::
 
+# View --------------------------------------------------------------------
+
+
 sql01_view <- function(database_name, database_view)
   {
     library(odbc)
@@ -23,7 +26,11 @@ sql01_view <- function(database_name, database_view)
     
     dbGetQuery(con, glue::glue("SELECT * FROM ", database_view))
     
-  } 
+} 
+
+
+# Table -------------------------------------------------------------------
+
 
 sql01_table <- function(database_name, database_table)
 {
@@ -46,6 +53,10 @@ sql01_table <- function(database_name, database_table)
   
 } 
 
+
+# Query -------------------------------------------------------------------
+
+
 sql01_query <- function(database_name, database_query)
 {
   library(odbc)
@@ -67,6 +78,9 @@ sql01_query <- function(database_name, database_query)
   
 } 
 
+
+# Con  --------------------------------------------------------------------
+
 sql01_con <- function(database_name)
 {
   library(odbc)
@@ -84,4 +98,6 @@ sql01_con <- function(database_name)
                    PWD = pwd,
                    Port = 1433)
 
-} 
+}
+
+

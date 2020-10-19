@@ -29,11 +29,11 @@ v <- sql01_view("Coin", "vwReportKeyData")
 # con <- dbConnect(RSQLite::SQLite(), "00_data/bikes_database.db")
 
 processed_data_tbl1 <- v %>%
-    filter(year(SubmittedDate) == 2020) %>%
+    filter(year(SubmittedDate) >= 2020) %>%
     filter(!(OrderStatus %in% c("cancelled","Cancelled"))) %>% 
     filter(HasCharge == "TRUE") %>% 
     mutate_if(is.numeric, funs(ifelse(is.na(.), 0, .))) %>% 
-    mutate(extended_price = OrderTotal + AdjustPrice) %>% 
+    mutate(extended_price = OrderTotal) %>% 
     collect()
 
 processed_data_tbl <- processed_data_tbl1 %>%    
