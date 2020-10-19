@@ -45,7 +45,12 @@ library(tidymodels)
 library(skimr)
 library(tidyverse)
 
+<<<<<<< HEAD
+gp <- read_csv("C:/Users/aborst/R-Projects/PrivateData/GF_Quotes2020.csv")
+gp <- read_csv("C:/Users/My Surface/Documents/R-Projects/PrivateData/GF_Quotes2020.csv")
+=======
 gp <- read_csv("C:/Users/aborst/Documents/R-Projects/CurrentBI/PrivateData/GF_Quotes2020.csv")
+>>>>>>> c71e85721d01d2f3f3b500275a7bccb55b04a93e
 
 source(file = "Data_Access/database_functions.R")
 
@@ -73,7 +78,7 @@ gp_submitted <- gp %>%
   mutate(status = "Submitted")
 
 
-gpplot <- union_all(gp2, gp_submitted)
+gp_plot <- union_all(gp2, gp_submitted)
 
 ggplot(data = gpplot, aes(weekNo, orderTotal, fill=status)) +
   geom_line(stat="identity", position ="dodge") +

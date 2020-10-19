@@ -1,0 +1,12 @@
+name: shiny_tu
+title: shiny_t
+username:
+account: andrew-borst
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2551299
+bundleId: 3369869
+url: https://andrew-borst.shinyapps.io/shiny_tu/
+when: 1594260364.53781
+asMultiple: FALSE
+asStatic: FALSE

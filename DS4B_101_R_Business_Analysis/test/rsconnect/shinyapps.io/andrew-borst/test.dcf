@@ -1,0 +1,12 @@
+name: test
+title: test
+username:
+account: andrew-borst
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2551287
+bundleId: 3369851
+url: https://andrew-borst.shinyapps.io/test/
+when: 1594259918.76245
+asMultiple: FALSE
+asStatic: FALSE
