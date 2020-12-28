@@ -224,3 +224,12 @@ projectdt <- datatable(projectm, container = js_op_aux("sketch", projectm), opti
 renderDataTable(projectdt)
 ```
 
+Hold
+===================================== 
+### Hold
+
+```{r, echo=FALSE}
+projectdt <- datatable(projectm, container = js_op_aux("sketch", projectm), options = list(paging = FALSE, searching = FALSE, footerCallback = javascript), rownames = FALSE) %>%   formatCurrency(c(3:4,6:7,9:10,12:13), digits = 0) 
+renderDataTable(projectdt)
+```
+
