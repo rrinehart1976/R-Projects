@@ -51,7 +51,10 @@ daily <- inner_join(t,LineMap,by="JobPrefix") %>%
   filter(ProductLine %in% c("Framed", "Full Access")) %>% 
   group_by(dayNo, Brand, ProductLine) %>% 
   summarise(Cases = sum(OrderCaseTotal), Dollars = sum(OrderTotal)) %>%
-  ungroup() 
+  ungroup()
+
+#if missing productline 
+# daily2 <- 
 
 weekly <- inner_join(t,LineMap,by="JobPrefix") %>% 
   select(weekNo, OrderCaseTotal,OrderTotal, Brand, ProductLine) %>% 
