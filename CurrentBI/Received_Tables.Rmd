@@ -52,7 +52,7 @@ daily <- inner_join(t,LineMap,by="JobPrefix") %>%
   group_by(dayNo, Brand, ProductLine) %>% 
   summarise(Cases = sum(OrderCaseTotal), Dollars = sum(OrderTotal)) %>%
   ungroup()
-
+  
 #if missing productline 
 # daily2 <- 
 
