@@ -36,12 +36,14 @@ vw <- tbl(conn,"vwReportKeyData") %>%
 t <- vw %>%
   filter(!is.na(ReceivedDate) & !is.na(OrderCaseTotal) & OrderCaseTotal != 0)  %>% 
   mutate(JobPrefix = str_sub(ShopFloorNumber, 1, 2)) %>%
-  mutate(weekNo = if_else(year(ScheduledCompleteDate) == 2001 | is.na(ScheduledCompleteDate) | OrderStatus == "On Hold", 99, isoweek(ScheduledCompleteDate)))
+  mutate(weekNumeric = if_else(year(ScheduledCompleteDate) == 2001 | is.na(ScheduledCompleteDate) | OrderStatus == "On Hold", 99, isoweek(ScheduledCompleteDate))) %>% 
+  mutate(weekNo = paste0(year(ScheduledCompleteDate), "-", sprintf("%02d",weekNumeric)))
+
 ```
 
 ```{r}
 sked <- inner_join(t,LineMap,by="JobPrefix") %>%
-  filter(weekNo != 99) %>% 
+  filter(weekNumeric != 99) %>% 
   select(weekNo, OrderCaseTotal,OrderTotal, Brand, Plant, ProductLine) %>% 
   filter(ProductLine %in% c("Framed", "Full Access")) %>% 
   group_by(weekNo, Brand, Plant, ProductLine) %>% 
@@ -130,8 +132,8 @@ indym <- indy %>%
 
 ```{r, echo=FALSE}
 projected <- inner_join(t,LineMap,by="JobPrefix") %>% 
+  filter(weekNumeric == 99) %>%
   select(weekNo, OrderStatus, OrderCaseTotal,OrderTotal, Brand, Plant, ProductLine) %>% 
-  filter(weekNo == 99) %>%
   filter(ProductLine %in% c("Framed", "Full Access")) %>% 
   group_by(weekNo, Brand, OrderStatus, ProductLine) %>% 
   summarise(Cases = sum(OrderCaseTotal), Dollars = sum(OrderTotal)) %>% 
