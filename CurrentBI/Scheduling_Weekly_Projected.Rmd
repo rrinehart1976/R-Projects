@@ -36,7 +36,7 @@ vw <- tbl(conn,"vwReportKeyData") %>%
 t <- vw %>%
   filter(!is.na(ReceivedDate) & !is.na(OrderCaseTotal) & OrderCaseTotal != 0)  %>% 
   mutate(JobPrefix = str_sub(ShopFloorNumber, 1, 2)) %>%
-  mutate(weekNo = if_else(year(ScheduledCompleteDate) == 2001 | is.na(ScheduledCompleteDate), 99, isoweek(ScheduledCompleteDate)))
+  mutate(weekNo = if_else(year(ScheduledCompleteDate) == 2001 | is.na(ScheduledCompleteDate) | OrderStatus == "On Hold", 99, isoweek(ScheduledCompleteDate)))
 ```
 
 ```{r}

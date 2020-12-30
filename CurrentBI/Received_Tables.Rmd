@@ -24,7 +24,7 @@ LineMap <- tbl(conn,"ddfJobType") %>%
   filter(!is.na(ProductLine)) %>% 
   collect()
 
-dayRange <- c(seq(day(today()), day(today()) - 7))
+dayRange <- c(seq(day(today()), day(today()) - 6))
 weekRange <- c(seq(isoweek(today()), isoweek(today()) - 4))
 monthRange <- c(seq(month(today()), month(today()) -4))
 
@@ -47,7 +47,7 @@ t <- vw %>%
   
 daily <- inner_join(t,LineMap,by="JobPrefix") %>% 
   select(dayNo, ReceivedDate, OrderCaseTotal,OrderTotal, Brand, ProductLine) %>%
-  filter(ReceivedDate > (today() - 6)) %>%   
+  filter(ReceivedDate > (today() - 15)) %>%   
   filter(ProductLine %in% c("Framed", "Full Access")) %>% 
   group_by(dayNo, Brand, ProductLine) %>% 
   summarise(Cases = sum(OrderCaseTotal), Dollars = sum(OrderTotal)) %>%
@@ -74,7 +74,8 @@ monthly <- inner_join(t,LineMap,by="JobPrefix") %>%
 
 daily_tbl <- daily %>% 
   pivot_wider(names_from = c("Brand", "ProductLine"), values_from = c("Cases", "Dollars")) %>% 
-  mutate_if(is.numeric, coalesce, ... = 0) %>% 
+  mutate_if(is.numeric, coalesce, ... = 0) %>%
+  filter(dayNo %in% dayRange) %>% 
   mutate(total_cases = Cases_Greenfield_Framed + `Cases_Greenfield_Full Access` + `Cases_Siteline_Full Access`) %>% 
   mutate(total_dollars = Dollars_Greenfield_Framed + `Dollars_Greenfield_Full Access` + `Dollars_Siteline_Full Access`) %>% 
   mutate(total_avg_case = (Dollars_Greenfield_Framed + `Dollars_Greenfield_Full Access` + `Dollars_Siteline_Full Access`) / (Cases_Greenfield_Framed + `Cases_Greenfield_Full Access` + `Cases_Siteline_Full Access`))
