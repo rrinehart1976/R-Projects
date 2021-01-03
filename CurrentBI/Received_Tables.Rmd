@@ -28,6 +28,11 @@ dayRange <- c(seq(day(today()), day(today()) - 6))
 weekRange <- c(seq(isoweek(today()), isoweek(today()) - 4))
 monthRange <- c(seq(month(today()), month(today()) -4))
 
+source("Shared/Common_functions.R")
+dayRange <- fixDayWeekMonthCounter(dayRange, 31)
+weekRange <- fixDayWeekMonthCounter(weekRange, 53)
+monthRange <- fixDayWeekMonthCounter(monthRange, 12)
+
 vw <- sql01_query("Coin", 
     "select	Brand, OrderStatus, Plant, ReceivedDate, OrderCaseTotal,   
     ShopFloorNumber, OrderTotal

@@ -46,3 +46,21 @@ fill_missing_rows <- function (x) {
   x
   
 }
+
+#Function to replace anything less than 0 in the array
+fixDayWeekMonthCounter <- function(xArray, startInt){
+  if(sum(xArray < 1) > 0){
+    
+    indexCounter = 1
+    
+    for(item in xArray){
+      if(item < 1){
+        xArray <- replace(xArray, indexCounter, startInt)
+        startInt <- startInt - 1
+      }
+      
+      indexCounter <- indexCounter + 1
+    }
+  }
+  return (xArray)
+}
