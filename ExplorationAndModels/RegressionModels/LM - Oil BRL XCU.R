@@ -48,8 +48,10 @@ mnorm  <-  m %>%  mutate(oilnorm = normalize(oil), coppernorm = normalize(copper
 
 mnorm %>% 
   ggplot(aes(Date, oilnorm)) +
-  geom_line() +
-  geom_line(data = mnorm, aes(Date,coppernorm), color = "red")
+  geom_line() + 
+  geom_point() +
+  geom_line(data = mnorm, aes(Date,coppernorm), color = "red") +
+  facet_wrap(~month(Date))
   
 cor(select(m, oil, copper))
 #fit oil model with copper as predictors (aka x-variable, explanatory variables)
