@@ -24,9 +24,14 @@ LineMap <- tbl(conn,"ddfJobType") %>%
   filter(!is.na(ProductLine)) %>% 
   collect()
 
-dayRange <- c(seq(day(today()), day(today()) - 7))
+dayRange <- c(seq(day(today()), day(today()) - 6))
 weekRange <- c(seq(isoweek(today()), isoweek(today()) - 4))
 monthRange <- c(seq(month(today()), month(today()) -4))
+
+source("Shared/Common_functions.R")
+dayRange <- fixDayWeekMonthCounter(dayRange, 31)
+weekRange <- fixDayWeekMonthCounter(weekRange, 53)
+monthRange <- fixDayWeekMonthCounter(monthRange, 12)
 
 vw <- sql01_query("Coin", 
     "select	Brand, OrderStatus, Plant, ReceivedDate, OrderCaseTotal,   
@@ -38,32 +43,38 @@ vw <- sql01_query("Coin",
 
 t <- vw %>%
   mutate(JobPrefix = str_sub(ShopFloorNumber, 1, 2)) %>%
-  mutate(weekNo = isoweek(ReceivedDate)) %>% 
-  mutate(dayNo = day(ReceivedDate)) %>% 
-  mutate(monthNo = month(ReceivedDate))
+  mutate(weekNumeric = isoweek(ReceivedDate)) %>% 
+  mutate(dayNumeric = day(ReceivedDate)) %>%
+  mutate(monthNumeric = month(ReceivedDate)) %>% 
+  mutate(dayNo = paste0(month(ReceivedDate), "-", sprintf("%02d", dayNumeric))) %>% 
+  mutate(weekNo = paste0(year(ReceivedDate), "-", sprintf("%02d", weekNumeric))) %>% 
+  mutate(monthNo = paste0(year(ReceivedDate), "-", sprintf("%02d",monthNumeric)))
 ```
 
 ```{r, echo=FALSE}
   
 daily <- inner_join(t,LineMap,by="JobPrefix") %>% 
-  select(dayNo, ReceivedDate, OrderCaseTotal,OrderTotal, Brand, ProductLine) %>%
-  filter(ReceivedDate > (today() - 6)) %>%   
+  select(dayNumeric, dayNo, ReceivedDate, OrderCaseTotal,OrderTotal, Brand, ProductLine) %>%
+  filter(ReceivedDate > (today() - 15)) %>%   
   filter(ProductLine %in% c("Framed", "Full Access")) %>% 
-  group_by(dayNo, Brand, ProductLine) %>% 
+  group_by(dayNumeric, dayNo, Brand, ProductLine) %>% 
   summarise(Cases = sum(OrderCaseTotal), Dollars = sum(OrderTotal)) %>%
-  ungroup() 
+  ungroup()
+  
+#if missing productline 
+# daily2 <- 
 
 weekly <- inner_join(t,LineMap,by="JobPrefix") %>% 
-  select(weekNo, OrderCaseTotal,OrderTotal, Brand, ProductLine) %>% 
-  filter(weekNo %in% weekRange) %>%
+  filter(weekNumeric %in% weekRange) %>%
+  select(weekNumeric, weekNo, OrderCaseTotal,OrderTotal, Brand, ProductLine) %>% 
   filter(ProductLine %in% c("Framed", "Full Access")) %>% 
   group_by(weekNo, Brand, ProductLine) %>% 
   summarise(Cases = sum(OrderCaseTotal), Dollars = sum(OrderTotal)) %>%
   ungroup() 
 
 monthly <- inner_join(t,LineMap,by="JobPrefix") %>% 
+  filter(monthNumeric %in% monthRange) %>%
   select(monthNo, OrderCaseTotal,OrderTotal, Brand, ProductLine) %>% 
-  filter(monthNo %in% monthRange) %>%
   filter(ProductLine %in% c("Framed", "Full Access")) %>% 
   group_by(monthNo, Brand, ProductLine) %>% 
   summarise(Cases = sum(OrderCaseTotal), Dollars = sum(OrderTotal)) %>%
@@ -71,7 +82,9 @@ monthly <- inner_join(t,LineMap,by="JobPrefix") %>%
 
 daily_tbl <- daily %>% 
   pivot_wider(names_from = c("Brand", "ProductLine"), values_from = c("Cases", "Dollars")) %>% 
-  mutate_if(is.numeric, coalesce, ... = 0) %>% 
+  mutate_if(is.numeric, coalesce, ... = 0) %>%
+  filter(dayNumeric %in% dayRange) %>%
+  select(-dayNumeric) %>% 
   mutate(total_cases = Cases_Greenfield_Framed + `Cases_Greenfield_Full Access` + `Cases_Siteline_Full Access`) %>% 
   mutate(total_dollars = Dollars_Greenfield_Framed + `Dollars_Greenfield_Full Access` + `Dollars_Siteline_Full Access`) %>% 
   mutate(total_avg_case = (Dollars_Greenfield_Framed + `Dollars_Greenfield_Full Access` + `Dollars_Siteline_Full Access`) / (Cases_Greenfield_Framed + `Cases_Greenfield_Full Access` + `Cases_Siteline_Full Access`))
