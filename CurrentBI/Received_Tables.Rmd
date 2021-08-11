@@ -37,7 +37,7 @@ vw <- sql01_query("Coin",
     "select	Brand, OrderStatus, Plant, ReceivedDate, OrderCaseTotal,   
     ShopFloorNumber, OrderTotal
     from vwReportKeyData
-    where datediff(month, ReceivedDate, getdate()) < 6 and OrderCaseTotal > 0 and OrderStatus <> 
+    where datediff(month, ReceivedDate, getdate()) < 6 and OrderStatus <> 
     'Cancelled'
     ")
 
